@@ -13,6 +13,12 @@
 @interface SDWebImageDownloaderOperation : NSOperation <SDWebImageOperation>
 
 /**
+ * Decompressing images that are downloaded and cached can improve peformance but can consume lot of memory.
+ * Defaults to YES. Set this to NO if you are experiencing a crash due to excessive memory consumption.
+ */
+@property (assign, nonatomic) BOOL shouldDecompressImages;
+
+/**
  * The request used by the operation's connection.
  */
 @property (strong, nonatomic, readonly) NSURLRequest *request;
