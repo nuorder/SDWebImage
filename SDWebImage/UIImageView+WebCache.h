@@ -62,6 +62,16 @@
 - (void)sd_setImageWithURL:(NSURL *)url;
 
 /**
+ * Set the imageView `image` with an `url`, and custom options
+ *
+ * The download is asynchronous and cached.
+ *
+ * @param url         The url for the image.
+ * @param options     The options to use when downloading the image. @see SDWebImageOptions for the possible values.
+ */
+- (void)sd_setImageWithURL:(NSURL *)url options:(SDWebImageOptions)options;
+
+/**
  * Set the imageView `image` with an `url` and a placeholder.
  *
  * The download is asynchronous and cached.
