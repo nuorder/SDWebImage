@@ -361,10 +361,8 @@
             completionBlock(nil, nil, nil, YES);
         }
         else {
+            // @@ 3636 prc use standard `imageWithData`
             UIImage *image = [UIImage imageWithData:self.imageData];
-            //UIImage *image = [UIImage sd_imageWithData:self.imageData];
-            //NSString *key = [[SDWebImageManager sharedManager] cacheKeyForURL:self.request.URL];
-            //image = [self scaledImageForKey:key image:image];
             
             // Do not force decoding animated GIFs
             if (!image.images && self.shouldDecompressImages) {

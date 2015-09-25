@@ -266,6 +266,7 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
 - (UIImage *)diskImageForKey:(NSString *)key {
     NSData *data = [self diskImageDataBySearchingAllPathsForKey:key];
     if (data) {
+        // @@ 3636 prc use standard `imageWithData`
         UIImage *image = [UIImage imageWithData:data];
         if(self.shouldDecompressImages) {
             image = [UIImage decodedImageWithImage:image];
