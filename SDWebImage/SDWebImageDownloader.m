@@ -23,9 +23,6 @@ static NSString *const kCompletedCallbackKey = @"completed";
 @property (assign, nonatomic) Class operationClass;
 @property (strong, nonatomic) NSMutableDictionary *URLCallbacks;
 @property (strong, nonatomic) NSMutableDictionary *HTTPHeaders;
-// This queue is used to serialize the handling of the network responses of all the download operation in a single queue
-@property (SDDispatchQueueSetterSementics, nonatomic) dispatch_queue_t barrierQueue;
-
 @end
 
 @implementation SDWebImageDownloader
@@ -70,15 +67,14 @@ static NSString *const kCompletedCallbackKey = @"completed";
         _downloadQueue.maxConcurrentOperationCount = 6;
         _URLCallbacks = [NSMutableDictionary new];
         _HTTPHeaders = [NSMutableDictionary dictionaryWithObject:@"image/webp,image/*;q=0.8" forKey:@"Accept"];
-        _barrierQueue = dispatch_queue_create("com.hackemist.SDWebImageDownloaderBarrierQueue", DISPATCH_QUEUE_CONCURRENT);
         _downloadTimeout = 15.0;
+        _shouldDecompressImages = YES;
     }
     return self;
 }
 
 - (void)dealloc {
     [self.downloadQueue cancelAllOperations];
-    SDDispatchQueueRelease(_barrierQueue);
 }
 
 - (void)setValue:(NSString *)value forHTTPHeaderField:(NSString *)field {
@@ -158,15 +154,25 @@ static NSString *const kCompletedCallbackKey = @"completed";
                                                             if (!sself) return;
                                                             [sself removeCallbacksForURL:url];
                                                         }];
-        
+
+        operation.shouldDecompressImages = wself.shouldDecompressImages;
+
         if (wself.username && wself.password) {
             operation.credential = [NSURLCredential credentialWithUser:wself.username password:wself.password persistence:NSURLCredentialPersistenceForSession];
         }
         
         if (options & SDWebImageDownloaderHighPriority) {
             operation.queuePriority = NSOperationQueuePriorityHigh;
+            // @@ 3636 prc add quality of service denotion
+            if([operation respondsToSelector:@selector(setQualityOfService:)]) {
+                [operation setQualityOfService:NSQualityOfServiceUserInitiated];
+            }
         } else if (options & SDWebImageDownloaderLowPriority) {
             operation.queuePriority = NSOperationQueuePriorityLow;
+            // @@ 3636 prc add quality of service denotion
+            if([operation respondsToSelector:@selector(setQualityOfService:)]) {
+                [operation setQualityOfService:NSQualityOfServiceUtility];
+            }
         }
 
         [wself.downloadQueue addOperation:operation];
@@ -189,7 +195,7 @@ static NSString *const kCompletedCallbackKey = @"completed";
         return;
     }
 
-    dispatch_barrier_sync(self.barrierQueue, ^{
+    @synchronized(self.URLCallbacks) {
         BOOL first = NO;
         if (!self.URLCallbacks[url]) {
             self.URLCallbacks[url] = [NSMutableArray new];
@@ -207,21 +213,21 @@ static NSString *const kCompletedCallbackKey = @"completed";
         if (first) {
             createCallback();
         }
-    });
+    }
 }
 
 - (NSArray *)callbacksForURL:(NSURL *)url {
     __block NSArray *callbacksForURL;
-    dispatch_sync(self.barrierQueue, ^{
+    @synchronized(self.URLCallbacks) {
         callbacksForURL = self.URLCallbacks[url];
-    });
+    }
     return [callbacksForURL copy];
 }
 
 - (void)removeCallbacksForURL:(NSURL *)url {
-    dispatch_barrier_async(self.barrierQueue, ^{
+    @synchronized(self.URLCallbacks) {
         [self.URLCallbacks removeObjectForKey:url];
-    });
+    }
 }
 
 - (void)setSuspended:(BOOL)suspended {

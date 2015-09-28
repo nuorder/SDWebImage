@@ -294,7 +294,9 @@
                 UIImage *image = [UIImage imageWithCGImage:partialImageRef scale:1 orientation:orientation];
                 NSString *key = [[SDWebImageManager sharedManager] cacheKeyForURL:self.request.URL];
                 UIImage *scaledImage = [self scaledImageForKey:key image:image];
-                image = [UIImage decodedImageWithImage:scaledImage];
+                if(self.shouldDecompressImages) {
+                    image = [UIImage decodedImageWithImage:scaledImage];
+                }
                 CGImageRelease(partialImageRef);
                 dispatch_main_sync_safe(^{
                     if (self.completedBlock) {
@@ -359,12 +361,11 @@
             completionBlock(nil, nil, nil, YES);
         }
         else {
-            UIImage *image = [UIImage sd_imageWithData:self.imageData];
-            NSString *key = [[SDWebImageManager sharedManager] cacheKeyForURL:self.request.URL];
-            image = [self scaledImageForKey:key image:image];
+            // @@ 3636 prc use standard `imageWithData`
+            UIImage *image = [UIImage imageWithData:self.imageData];
             
             // Do not force decoding animated GIFs
-            if (!image.images) {
+            if (!image.images && self.shouldDecompressImages) {
                 image = [UIImage decodedImageWithImage:image];
             }
             if (CGSizeEqualToSize(image.size, CGSizeZero)) {

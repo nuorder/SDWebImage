@@ -81,6 +81,8 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
             _fileManager = [NSFileManager new];
         });
 
+        _shouldDecompressImages = YES;
+
 #if TARGET_OS_IPHONE
         // Subscribe to app events
         [[NSNotificationCenter defaultCenter] addObserver:self
@@ -264,9 +266,11 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
 - (UIImage *)diskImageForKey:(NSString *)key {
     NSData *data = [self diskImageDataBySearchingAllPathsForKey:key];
     if (data) {
-        UIImage *image = [UIImage sd_imageWithData:data];
-        image = [self scaledImageForKey:key image:image];
-        image = [UIImage decodedImageWithImage:image];
+        // @@ 3636 prc use standard `imageWithData`
+        UIImage *image = [UIImage imageWithData:data];
+        if(self.shouldDecompressImages) {
+            image = [UIImage decodedImageWithImage:image];
+        }
         return image;
     }
     else {
