@@ -163,8 +163,16 @@ static NSString *const kCompletedCallbackKey = @"completed";
         
         if (options & SDWebImageDownloaderHighPriority) {
             operation.queuePriority = NSOperationQueuePriorityHigh;
+            // @@ 3636 prc add quality of service denotion
+            if([operation respondsToSelector:@selector(setQualityOfService:)]) {
+                [operation setQualityOfService:NSQualityOfServiceUserInitiated];
+            }
         } else if (options & SDWebImageDownloaderLowPriority) {
             operation.queuePriority = NSOperationQueuePriorityLow;
+            // @@ 3636 prc add quality of service denotion
+            if([operation respondsToSelector:@selector(setQualityOfService:)]) {
+                [operation setQualityOfService:NSQualityOfServiceUtility];
+            }
         }
 
         [wself.downloadQueue addOperation:operation];
