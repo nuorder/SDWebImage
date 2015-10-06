@@ -189,7 +189,21 @@ BOOL ImageDataHasPNGPreffix(NSData *data) {
                     [_fileManager createDirectoryAtPath:_diskCachePath withIntermediateDirectories:YES attributes:nil error:NULL];
                 }
 
-                [_fileManager createFileAtPath:[self defaultCachePathForKey:key] contents:data attributes:nil];
+                //prc Support on demand creation of storage directories
+
+                //Get the path to save file as
+                NSString* filePath = [self defaultCachePathForKey:key];
+
+                //Retrieve the containing directory path
+                NSString* filePathDirectory = [filePath stringByDeletingLastPathComponent];
+
+                //Create directory path if necessary
+                if (![_fileManager fileExistsAtPath:filePathDirectory]) {
+                    [_fileManager createDirectoryAtPath:filePathDirectory withIntermediateDirectories:YES attributes:nil error:NULL];
+                }
+
+                //Save file
+                [_fileManager createFileAtPath:filePath contents:data attributes:nil];
             }
         });
     }
